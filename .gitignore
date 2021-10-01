@@ -1,0 +1,6 @@
+*.o
+compile_commands.json
+.cache
+kernel
+disk.img
+bootloader
