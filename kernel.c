@@ -1,14 +1,11 @@
+#include <boot.h>
 #include <string.h>
-
-void report_mm();
 
 void kernel_entry()
 {
+	report_memory();
 
-	printf("entry %x\n", kernel_entry);
-	report_mm();
-
-	printf("hello^world!\n");
+	enable_page();
 
 	while (1);
 }
