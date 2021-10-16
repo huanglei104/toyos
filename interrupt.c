@@ -44,12 +44,20 @@ static __attribute__((interrupt))
 void clk_process(struct interrupt_frame *frame)
 {
 	printf("%s\n", __func__);
+
+	outbyte(0x20, 0x20);
 }
 
 static __attribute__((interrupt))
 void kb_process(struct interrupt_frame *frame)
 {
-	printf("%s\n", __func__);
+	int code;
+
+	inbyte(0x60, &code);
+
+	printf("%d\n", code);
+
+	outbyte(0x20, 0x20);
 }
 
 void setup_idt()

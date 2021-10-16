@@ -1,2 +1,2 @@
-void outb(int port, int value);
-void inb(int port, int *value);
+void outbyte(int port, int value);
+void inbyte(int port, void *addr);
