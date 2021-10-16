@@ -7,5 +7,9 @@ void kernel_entry()
 
 	enable_page();
 
+	setup_idt();
+
+	init_8259a();
+
 	while (1);
 }

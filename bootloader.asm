@@ -3,6 +3,7 @@
 	org 0x7c00
 
 ;detect memory
+	cli;
 	mov word [0x7b00], 0
 	mov ax, 0
 	mov es, ax

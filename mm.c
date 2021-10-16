@@ -5,17 +5,17 @@
 #define PT_NUM	1024
 
 typedef struct {
-	int p:1;
-	int rw:1;
-	int us:1;
-	int pwt:1;
-	int pcd:1;
-	int a:1;
-	int d:1;
-	int pat:1;
-	int g:1;
-	int avl:3;
-	int base:20;
+	unsigned int p:1;
+	unsigned int rw:1;
+	unsigned int us:1;
+	unsigned int pwt:1;
+	unsigned int pcd:1;
+	unsigned int a:1;
+	unsigned int d:1;
+	unsigned int pat:1;
+	unsigned int g:1;
+	unsigned int avl:3;
+	unsigned int base:20;
 } pde_t;
 
 typedef pde_t pte_t;
@@ -31,7 +31,7 @@ typedef struct {
 pde_t pd[PDE_NUM] __attribute__ ((aligned(0x1000)));
 pte_t pt[PT_NUM][PTE_NUM] __attribute__ ((aligned(0x1000)));
 
-const static int *ardsn = (int*)0x7b00;
+const static unsigned int *ardsn = (unsigned int*)0x7b00;
 
 void report_memory()
 {
@@ -49,14 +49,14 @@ void report_memory()
 
 void enable_page()
 {
-	unsigned int pdaddr = (int)&pd;
+	unsigned int pdaddr = (unsigned int)&pd;
 	unsigned int pbase = 0x0;
 
 	for (int i = 0; i < PDE_NUM; i++) {
 		pd[i].p = 1;
 		pd[i].rw = 1;
 		pd[i].us = 1;
-		pd[i].base = (int)&pt[i] >> 12;
+		pd[i].base = (unsigned int)&pt[i] >> 12;
 
 		for (int j = 0; j < PTE_NUM; j++) {
 			pt[i][j].p = 1;
