@@ -20,4 +20,6 @@ typedef unsigned char uchar_t;
 #define low16(addr) ((uint16_t)((uint32_t)(addr)))
 #define high16(addr) ((uint16_t)(((uint32_t)(addr)) >> 16))
 
+#define array_size(a) (sizeof(a) / sizeof(a[0]))
+
 #endif

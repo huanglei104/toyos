@@ -120,10 +120,10 @@ void memset(uchar_t *str, int val, int len)
 	for (int i = 0; i < len; i++) str[i] = val;
 }
 
-int printf(const uchar_t *fmt, ...)
+void printf(const uchar_t *fmt, ...)
 {
-	int radix;
-	int cval, intval;
+	int radix, intval;
+	uchar_t cval;
 	uint32_t uval;
 	uchar_t *strval, buf[16];
 	va_list va;
@@ -156,7 +156,7 @@ int printf(const uchar_t *fmt, ...)
 				puts(strval);
 
 			} else if (fmt[i + 1] == 'c') {
-				cval = va_arg(va, int);
+				cval = (uchar_t)va_arg(va, uint32_t);
 				putc(cval);
 			}
 
@@ -168,8 +168,6 @@ int printf(const uchar_t *fmt, ...)
 	}
 
 	va_end(va);
-
-	return 0;
 }
 
 char *strcpy(char *dst, char *src)
