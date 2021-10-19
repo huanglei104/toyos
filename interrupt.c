@@ -1,11 +1,12 @@
 #include <core.h>
-#include <stdtype.h>
 #include <string.h>
 
-#define IRMAX	256
-#define IRQ_DF	0x8
-#define IRQ_CLK	0x20
-#define IRQ_KB	0x21
+#define IRMAX		256
+#define IRQ_DF		0x8
+#define IRQ_CLK		0x20
+#define IRQ_KB		0x21
+#define IRQ_RTC		0x28
+#define IRQ_MOUSE	0x2c
 
 #define KBV_CTRL		0x1d
 #define KBV_SHIFT		0x2a
@@ -50,15 +51,20 @@ void df_process(struct interrupt_frame *frame)
 }
 
 static __attribute__((interrupt))
-void clk_process(struct interrupt_frame *frame)
+void timer_process(struct interrupt_frame *frame)
 {
-	printf("%s\n", __func__);
+	uchar_t buf[8] = {0};
+	static int i = 0;
+
+	itoa(i, buf, 10);
+	putat(buf, 24, 40);
+	i++;
 
 	outbyte(0x20, 0x20);
 }
 
 static __attribute__((interrupt))
-void kb_process(struct interrupt_frame *frame)
+void kbd_process(struct interrupt_frame *frame)
 {
 	uchar_t ascii;
 	uint32_t code;
@@ -97,13 +103,35 @@ void kb_process(struct interrupt_frame *frame)
 	outbyte(0x20, 0x20);
 }
 
+static __attribute__((interrupt))
+void rtc_process(struct interrupt_frame *frame)
+{
+	printf("%s\n", __func__);
+
+	asm volatile("in al, 0x71");
+
+	outbyte(0x20, 0x20);
+	outbyte(0xa0, 0x20);
+}
+
+static __attribute__((interrupt))
+void mouse_process(struct interrupt_frame *frame)
+{
+	printf("%s\n", __func__);
+
+	outbyte(0x20, 0x20);
+	outbyte(0xa0, 0x20);
+}
+
 void setup_idt()
 {
 	uint16_t idtbase[3];
 	ivec_t vecs[] = {
 		{IRQ_DF, df_process},
-		{IRQ_CLK, clk_process},
-		{IRQ_KB, kb_process},
+		{IRQ_CLK, timer_process},
+		{IRQ_KB, kbd_process},
+		{IRQ_RTC, rtc_process},
+		{IRQ_MOUSE, mouse_process},
 	};
 
 	for (int i = 0; i < IRMAX; i++) {

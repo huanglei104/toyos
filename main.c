@@ -11,5 +11,11 @@ void kernel_entry()
 
 	init_8259a();
 
+	init_timer();
+
+	init_rtc();
+
+	enable_nmi();
+
 	while (1);
 }

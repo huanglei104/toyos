@@ -1,12 +1,13 @@
 #include <stdtype.h>
 
+#define VSTART		0xb8000
 #define TEXTATTR	0xf
 
-static uint32_t position = 0xb8000;
+static uint32_t position = VSTART;
 
 static void __newline()
 {
-	position = position + 160 - (position - 0xb8000) % 160;
+	position = position + 160 - (position - VSTART) % 160;
 }
 
 void puts(const uchar_t *str)
@@ -20,6 +21,7 @@ void puts(const uchar_t *str)
 			*(uchar_t*)(position + 1) = TEXTATTR;
 
 			position += 2;
+			if (position - VSTART >= 4000) position = VSTART;
 		}
 	}
 }
@@ -34,6 +36,7 @@ void putc(uchar_t c)
 		*(uchar_t*)(position + 1) = TEXTATTR;
 
 		position += 2;
+		if (position -VSTART >= 4000) position = VSTART;
 	}
 }
 
@@ -221,4 +224,15 @@ int atoi(uchar_t *str)
 	}
 
 	return data * sign;
+}
+
+/*row/col start from 0*/
+void putat(const uchar_t *str, uint32_t row, uint32_t col)
+{
+	uchar_t *addr = (uchar_t*)(row * 160 + col * 2 + 0xb8000);
+
+	for (int i = 0; str[i]; i += 2) {
+		addr[i] = str[i];
+		addr[i + 1] = TEXTATTR;
+	}
 }
