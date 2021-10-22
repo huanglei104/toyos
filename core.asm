@@ -3,6 +3,7 @@ global inbyte
 global init_8259a
 global init_timer
 global init_rtc
+global read_time
 
 [bits 32]
 
@@ -37,7 +38,7 @@ init_8259a:
 	pushad
 	mov esi, _port
 	mov edi, _value
-	mov ecx, 10
+	mov ecx, (_value - _port) / 2
 .next:
 	mov dx, [esi]
 	mov al, [edi]
@@ -51,24 +52,49 @@ init_8259a:
 
 init_timer:
 	mov al, 0x34
-	out 0x43, al
+	out 0x43, al	;使用二进制计数方式;工作方式2;读写方式先低后高;选择计数器0
 	mov al, 0x9c
-	out 0x40, al
+	out 0x40, al	;写入初始值低8位
 	mov al, 0x2e
-	out 0x40, al
+	out 0x40, al	;写入初始值高8位,将频率设置为100Hz
 	ret
 
 init_rtc:
-	mov al, 0x0b                        ;RTC寄存器B
-	or al, 0x80                         ;阻断NMI
+	mov al, 0x0b
+	or al, 0x80
+	out 0x70, al	;选择寄存器B且阻断NMI
+	mov al, 0x16
+	out 0x71, al	;时间采用二进制格式和24小时制,只开放更新结束中断，关闭其他中断
+	ret
+
+read_time:
+	jmp _set
+	_cmos_offset db 0x09, 0x08, 0x07, 0x04, 0x02, 0x00
+_set:
+	push eax
+	push ebx
+	mov ebx, [esp + 12]
+
+	mov al, 0xc
 	out 0x70, al
-	;mov al, 0x12                        ;设置寄存器B，禁止周期性中断，开放更
-	mov al, 0x72                        ;设置寄存器B，禁止周期性中断，开放更
-	out 0x71, al                        ;新结束后中断，BCD码，24小时制
-	mov al, 0x0c
+	in al, 0x71		;读取C寄存器，使中断继续发生
+
+	push ecx
+	mov esi, _cmos_offset
+	mov ecx, (_set - _cmos_offset) / 1
+.next
+	mov al, [esi]
 	out 0x70, al
-	in al, 0x71                         ;读RTC寄存器C，复位未决的中断状态
-	in al, 0xa1                         ;读8259从片的IMR寄存器
-	and al, 0xfe                        ;清除bit 0(此位连接RTC)
-	out 0xa1,al                        ;写回此寄存器
+	in al, 0x71
+	mov [ebx], al
+	inc esi
+	inc ebx
+	loop .next
+	pop ecx
+
+	mov al, 0x20
+	out 0x20, al
+	out 0xa0, al
+	pop ebx
+	pop eax
 	ret

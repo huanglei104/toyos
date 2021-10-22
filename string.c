@@ -40,43 +40,24 @@ void putc(uchar_t c)
 	}
 }
 
-uchar_t* itoa(int num, uchar_t *str, int radix)
+uchar_t* itoa(int i, uchar_t *buf, int radix)
 {
-	const char table[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-	int negative = 0;
-	uchar_t *start, temp;
-	uchar_t *ptr = str;
+	int tidx = 0, bidx = 0;
+    char tmp[16] = {0};
+    const char *map = "0123456789abcdef";
 
-	if (num == 0) {
-		*ptr++ = '0';
-		*ptr = '\0';
-		return str;
-	}
+    if (i < 0 ) {
+        i = -i;
+        buf[bidx++] = '-';
+    }
 
-	if (num < 0){
-		*ptr++ = '-';
-		num *= -1;
-		negative = 1;
-	}
+    do {
+        tmp[tidx++] = map[i % radix];
+    } while ((i /= radix));
 
-	while (num){
-		*ptr++ = table[num % radix];
-		num /= radix;
-	}
+    for (; tidx >= 0;) buf[bidx++] = tmp[--tidx];
 
-	*ptr = '\0';
-	start = negative ? str + 1 : str;
-	ptr--;
-
-	while (start < ptr){
-		temp = *start;
-		*start = *ptr;
-		*ptr = temp;
-		start++;
-		ptr--;
-	}
-
-	return str;
+    return buf;
 }
 
 uchar_t* utoa(uint32_t num, uchar_t *str, int radix)
@@ -231,8 +212,8 @@ void putat(const uchar_t *str, uint32_t row, uint32_t col)
 {
 	uchar_t *addr = (uchar_t*)(row * 160 + col * 2 + 0xb8000);
 
-	for (int i = 0; str[i]; i += 2) {
-		addr[i] = str[i];
-		addr[i + 1] = TEXTATTR;
+	for (int i = 0, j = 0; str[i]; i++, j += 2) {
+		addr[j] = str[i];
+		addr[j + 1] = TEXTATTR;
 	}
 }

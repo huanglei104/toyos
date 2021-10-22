@@ -106,12 +106,13 @@ void kbd_process(struct interrupt_frame *frame)
 static __attribute__((interrupt))
 void rtc_process(struct interrupt_frame *frame)
 {
-	printf("%s\n", __func__);
+	datetime_t dt = {0};
 
-	asm volatile("in al, 0x71");
+	read_time(&dt);
 
-	outbyte(0x20, 0x20);
-	outbyte(0xa0, 0x20);
+	printf("%d %d %d %d %d %d\n",
+			dt.year, dt.month, dt.day,
+			dt.hour, dt.minute, dt.second);
 }
 
 static __attribute__((interrupt))
