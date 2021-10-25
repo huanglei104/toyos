@@ -82,7 +82,7 @@ _set:
 	push ecx
 	mov esi, _cmos_offset
 	mov ecx, (_set - _cmos_offset) / 1
-.next
+.next:
 	mov al, [esi]
 	out 0x70, al
 	in al, 0x71

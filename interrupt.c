@@ -6,13 +6,19 @@
 #define IRQ_CLK		0x20
 #define IRQ_KB		0x21
 #define IRQ_RTC		0x28
-#define IRQ_MOUSE	0x2c
+#define IRQ_0x80	0x80
 
 #define KBV_CTRL		0x1d
 #define KBV_SHIFT		0x2a
 #define KBV_CAPSLOCK	0x3a
 
-struct interrupt_frame;
+struct interrupt_frame {
+    uint32_t ip;
+    uint32_t cs;
+    uint32_t flags;
+    uint32_t sp;
+    uint32_t ss;
+};
 
 typedef struct {
 	int port;
@@ -66,8 +72,8 @@ void timer_process(struct interrupt_frame *frame)
 static __attribute__((interrupt))
 void kbd_process(struct interrupt_frame *frame)
 {
-	uchar_t ascii;
-	uint32_t code;
+	uchar_t ascii = 0;
+	uint8_t code;
 	static kbascii_t keymap[] = {
 		{0x00, 0x00}, {0x1b, 0x1b}, {0x31, 0x21}, {0x32, 0x40}, {0x33, 0x23},
 		{0x34, 0x24}, {0x35, 0x25}, {0x36, 0x5e}, {0x37, 0x26}, {0x38, 0x2a},
@@ -113,10 +119,12 @@ void rtc_process(struct interrupt_frame *frame)
 	printf("%d %d %d %d %d %d\n",
 			dt.year, dt.month, dt.day,
 			dt.hour, dt.minute, dt.second);
+
+	asm volatile("int 0x80");
 }
 
 static __attribute__((interrupt))
-void mouse_process(struct interrupt_frame *frame)
+void x80_process(struct interrupt_frame *frame)
 {
 	printf("%s\n", __func__);
 
@@ -124,7 +132,7 @@ void mouse_process(struct interrupt_frame *frame)
 	outbyte(0xa0, 0x20);
 }
 
-void setup_idt()
+void init_idt()
 {
 	uint16_t idtbase[3];
 	ivec_t vecs[] = {
@@ -132,7 +140,6 @@ void setup_idt()
 		{IRQ_CLK, timer_process},
 		{IRQ_KB, kbd_process},
 		{IRQ_RTC, rtc_process},
-		{IRQ_MOUSE, mouse_process},
 	};
 
 	for (int i = 0; i < IRMAX; i++) {
@@ -146,6 +153,9 @@ void setup_idt()
 		idt[vecs[i].number].offset1 = low16(vecs[i].handler);
 		idt[vecs[i].number].offset2 = high16(vecs[i].handler);
 	}
+
+	idt[0x80].select = 0x30;
+	idt[0x80].fixed8e00 = 0x8500;
 
 	idtbase[0] = sizeof(idte_t) * IRMAX - 1;
 	*(uint32_t*)(idtbase + 1) = (uint32_t)idt;

@@ -36,11 +36,11 @@ void putc(uchar_t c)
 		*(uchar_t*)(position + 1) = TEXTATTR;
 
 		position += 2;
-		if (position -VSTART >= 4000) position = VSTART;
+		if (position - VSTART >= 4000) position = VSTART;
 	}
 }
 
-uchar_t* itoa(int i, uchar_t *buf, int radix)
+uchar_t* itoa(int32_t i, uchar_t *buf, int radix)
 {
 	int tidx = 0, bidx = 0;
     char tmp[16] = {0};
@@ -60,43 +60,19 @@ uchar_t* itoa(int i, uchar_t *buf, int radix)
     return buf;
 }
 
-uchar_t* utoa(uint32_t num, uchar_t *str, int radix)
+uchar_t* utoa(uint32_t num, uchar_t *buf, int radix)
 {
-	const char table[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-	int negative = 0;
-	uchar_t *start, temp;
-	uchar_t *ptr = str;
+	int tidx = 0, bidx = 0;
+    char tmp[16] = {0};
+    const char *map = "0123456789abcdef";
 
-	if (num == 0) {
-		*ptr++ = '0';
-		*ptr = '\0';
-		return str;
-	}
+    do {
+        tmp[tidx++] = map[num % radix];
+    } while ((num /= radix));
 
-	if (num < 0){
-		*ptr++ = '-';
-		num *= -1;
-		negative = 1;
-	}
+    for (; tidx >= 0;) buf[bidx++] = tmp[--tidx];
 
-	while (num){
-		*ptr++ = table[num % radix];
-		num /= radix;
-	}
-
-	*ptr = '\0';
-	start = negative ? str + 1 : str;
-	ptr--;
-
-	while (start < ptr){
-		temp = *start;
-		*start = *ptr;
-		*ptr = temp;
-		start++;
-		ptr--;
-	}
-
-	return str;
+    return buf;
 }
 
 void memset(uchar_t *str, int val, int len)

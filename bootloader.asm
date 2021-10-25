@@ -118,7 +118,7 @@ read_disk:
 
 	[bits 16]
 gdt_start:
-	dw (gdt_end - gdt_start)
+	dw (gdt_end - gdt_start) - 1
 	dd gdt_start
 	dw 0
 	dq 0xcf98000000ffff
