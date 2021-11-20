@@ -1,24 +1,27 @@
-CFLAGS = -Wall -m32 -masm=intel -fno-builtin -fno-builtin-function -fno-stack-protector -nolibc  -nostdlib -mgeneral-regs-only -Os -fno-pic -fno-pie
+CFLAGS = -Wall -m32 -masm=intel -fno-stack-protector  -mgeneral-regs-only -Os -fno-pic -fno-pie -ffreestanding
 LDFLAGS = -m elf_i386 -T link.ld --gc-sections -s
-INCS = -I./include
+INCS = -Iinclude
 SRC = $(wildcard *.c)
-OBJ = $(patsubst %.c, %.o, $(SRC))
+OBJ = $(patsubst %.c, out/%.o, $(SRC))
 
-build : loader kernel
-	dd if=bootloader of=disk.img conv=notrunc
-	dd if=kernel of=disk.img conv=notrunc seek=1
+kernel : bootloader out/boot.o $(OBJ)
+	ld $(LDFLAGS) $(OBJ) out/boot.o -o out/kernel
+	dd if=out/bootloader of=disk.img conv=notrunc
+	dd if=out/kernel of=disk.img conv=notrunc seek=1
 
-clean:
-	rm -rf bootloader kernel $(OBJ) core.o
+bootloader : asm/bootloader.asm
+	nasm $< -o out/bootloader
 
-loader : bootloader.asm
-	nasm bootloader.asm -o bootloader
+out/boot.o : asm/boot.asm
+	nasm  -f elf32 $< -o $@
 
-kernel : $(OBJ) core.o
-	ld $(LDFLAGS) -o kernel $(OBJ) core.o
-
-%.o : %.c
+out/%.o : %.c
 	gcc $(CFLAGS) $(INCS) -c $< -o $@
 
-core.o : core.asm
-	nasm core.asm -f elf32 -o core.o
+lib.o : lib/*.c
+	make -C lib/
+
+clean:
+	rm -rf out/*
+
+

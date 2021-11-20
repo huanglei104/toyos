@@ -1,28 +1,50 @@
 #include <boot.h>
 #include <string.h>
-#include <core.h>
 
-void kernel_entry()
+__task void task2_run(irframe_t *irf)
 {
-	init_gdt();
+	int i = 0;
+	char buf[16];
 
-	init_stack();
+	while (1) {
+		sprintf(buf, "%d", i);
+		printat(buf, 0, 10);
+		i++;
+	}
+}
 
-	report_memory();
+__task void task3_run(irframe_t *irf)
+{
+	int i = 'A';
 
-	enable_page();
+	while (1) {
+		if (i > 'Z') i = 'A';
+		printat((char*)&i, 1, 10);
+		i++;
+	}
+}
 
-	init_idt();
+__task void task4_run(irframe_t *irf)
+{
+	int i = '0';
 
-	init_task();
+	while (1) {
+		if (i > '9') i = '0';
+		printat((char*)&i, 2, 10);
+		i++;
+	}
+}
 
-	init_8259a();
+int main()
+{
+	interrupt_init();
+	multitask_init();
 
-	init_timer();
+	create_task(task2_run);
+	create_task(task3_run);
+	create_task(task4_run);
 
-	init_rtc();
-
-	enable_nmi();
+	sti();
 
 	while (1);
 }

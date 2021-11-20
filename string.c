@@ -1,144 +1,10 @@
 #include <stdtype.h>
+#include <tty.h>
 
 #define VSTART		0xb8000
 #define TEXTATTR	0xf
 
-static uint32_t position = VSTART;
-
-static void __newline()
-{
-	position = position + 160 - (position - VSTART) % 160;
-}
-
-void puts(const uchar_t *str)
-{
-	for (int i = 0; str[i]; i++) {
-		if (str[i] == '\n') {
-			__newline();
-
-		} else {
-			*(uchar_t*)position = str[i];
-			*(uchar_t*)(position + 1) = TEXTATTR;
-
-			position += 2;
-			if (position - VSTART >= 4000) position = VSTART;
-		}
-	}
-}
-
-void putc(uchar_t c)
-{
-	if (c == '\n') {
-		__newline();
-
-	} else {
-		*(uchar_t*)position = c;
-		*(uchar_t*)(position + 1) = TEXTATTR;
-
-		position += 2;
-		if (position - VSTART >= 4000) position = VSTART;
-	}
-}
-
-uchar_t* itoa(int32_t i, uchar_t *buf, int radix)
-{
-	int tidx = 0, bidx = 0;
-    char tmp[16] = {0};
-    const char *map = "0123456789abcdef";
-
-    if (i < 0 ) {
-        i = -i;
-        buf[bidx++] = '-';
-    }
-
-    do {
-        tmp[tidx++] = map[i % radix];
-    } while ((i /= radix));
-
-    for (; tidx >= 0;) buf[bidx++] = tmp[--tidx];
-
-    return buf;
-}
-
-uchar_t* utoa(uint32_t num, uchar_t *buf, int radix)
-{
-	int tidx = 0, bidx = 0;
-    char tmp[16] = {0};
-    const char *map = "0123456789abcdef";
-
-    do {
-        tmp[tidx++] = map[num % radix];
-    } while ((num /= radix));
-
-    for (; tidx >= 0;) buf[bidx++] = tmp[--tidx];
-
-    return buf;
-}
-
-void memset(uchar_t *str, int val, int len)
-{
-	for (int i = 0; i < len; i++) str[i] = val;
-}
-
-void printf(const uchar_t *fmt, ...)
-{
-	int radix, intval;
-	uchar_t cval;
-	uint32_t uval;
-	uchar_t *strval, buf[16];
-	va_list va;
-
-	va_start(va, fmt);
-
-	for (int i = 0; fmt[i]; i++) {
-		if (fmt[i] == '%') {
-			if (fmt[i + 1] == 'd' || fmt[i + 1] == 'x') {
-				memset(buf, 0, 16);
-				intval = va_arg(va, int);
-				radix = fmt[i + 1] == 'd' ? 10 : 16;
-				itoa(intval, buf, radix);
-				puts(buf);
-
-			} else if (fmt[i + 1] == 'u') {
-				memset(buf, 0, 16);
-				uval = va_arg(va, uint32_t);
-				utoa(uval, buf, 10);
-				puts(buf);
-
-			} else if (fmt[i + 1] == 'p') {
-				memset(buf, 0, 16);
-				uval = va_arg(va, uint32_t);
-				utoa(uval, buf, 16);
-				puts(buf);
-
-			} else if (fmt[i + 1] == 's') {
-				strval = va_arg(va, uchar_t*);
-				puts(strval);
-
-			} else if (fmt[i + 1] == 'c') {
-				cval = (uchar_t)va_arg(va, uint32_t);
-				putc(cval);
-			}
-
-			i++;
-
-		} else {
-			putc(fmt[i]);
-		}
-	}
-
-	va_end(va);
-}
-
-char *strcpy(char *dst, char *src)
-{
-	for (int i = 0; src[i]; i++)
-		dst[i] = src[i];
-
-	return dst;
-}
-
-int strlen(char *str)
+int strlen(const char *str)
 {
 	int i;
 
@@ -161,7 +27,7 @@ int isdigit(int c)
 	return 0;
 }
 
-int atoi(uchar_t *str)
+int atoi(char *str)
 {
 	int data = 0, i = 0, sign = 1;
 
@@ -183,13 +49,129 @@ int atoi(uchar_t *str)
 	return data * sign;
 }
 
-/*row/col start from 0*/
-void putat(const uchar_t *str, uint32_t row, uint32_t col)
+char* itoa(int32_t i, char *buf, int radix)
 {
-	uchar_t *addr = (uchar_t*)(row * 160 + col * 2 + 0xb8000);
+	int tidx = 0, bidx = 0;
+    char tmp[16] = {0};
+    const char *map = "0123456789abcdef";
 
-	for (int i = 0, j = 0; str[i]; i++, j += 2) {
-		addr[j] = str[i];
-		addr[j + 1] = TEXTATTR;
+    if (i < 0 ) {
+        i = -i;
+        buf[bidx++] = '-';
+    }
+
+    do tmp[tidx++] = map[i % radix]; while ((i /= radix));
+
+    for (; tidx >= 0;) buf[bidx++] = tmp[--tidx];
+
+    return buf;
+}
+
+char* utoa(uint32_t num, char *buf, int radix)
+{
+	int tidx = 0, bidx = 0;
+    char tmp[16] = {0};
+    const char *map = "0123456789abcdef";
+
+    do tmp[tidx++] = map[num % radix]; while ((num /= radix));
+
+    for (; tidx >= 0;) buf[bidx++] = tmp[--tidx];
+
+    return buf;
+}
+
+int strcpy(char *dst, char *src)
+{
+	int i;
+
+	for (i = 0; src[i]; i++) dst[i] = src[i];
+
+	return i;
+}
+
+void memset(void *addr, int val, int len)
+{
+	char *p = addr;
+
+	for (int i = 0; i < len; i++) p[i] = val;
+}
+
+void vprintf(char *dest, const char *fmt, va_list va)
+{
+	char cval;
+	uint32_t uval;
+	char *strval, buf[16];
+	int radix, intval;
+	int offset = 0;
+
+	for (int i = 0; fmt[i]; i++) {
+		if (fmt[i] == '%') {
+			memset(buf, 0, 16);
+			if (fmt[i + 1] == 'd' || fmt[i + 1] == 'x') {
+				intval = va_arg(va, int32_t);
+				radix = fmt[i + 1] == 'd' ? 10 : 16;
+				itoa(intval, buf, radix);
+				if (dest == NULL)
+					tty_puts(buf);
+				else
+					offset += strcpy(dest + offset, buf);
+
+			} else if (fmt[i + 1] == 'D' || fmt[i + 1] == 'X') {
+				uval = va_arg(va, uint32_t);
+				radix = fmt[i + 1] == 'D' ? 10 : 16;
+				utoa(uval, buf, radix);
+				if (dest == NULL)
+					tty_puts(buf);
+				else
+					offset += strcpy(dest + offset, buf);
+
+			} else if (fmt[i + 1] == 's') {
+				strval = va_arg(va, char*);
+				if (dest == NULL)
+					tty_puts(strval);
+				else
+					offset += strcpy(dest + offset, strval);
+
+			} else if (fmt[i + 1] == 'c') {
+				cval = (char)va_arg(va, uint32_t);
+				if (dest == NULL)
+					tty_putc(cval);
+				else
+					dest[offset++] = cval;
+			}
+
+			i++;
+
+		} else {
+			if (dest == NULL)
+				tty_putc(fmt[i]);
+			else
+				dest[offset++] = fmt[i];
+		}
 	}
+}
+
+void sprintf(char *buf, const char *fmt, ...)
+{
+	va_list va;
+
+	va_start(va, fmt);
+	vprintf(buf, fmt, va);
+	buf[strlen(buf)] = '\0';
+	va_end(va);
+}
+
+
+void printf(const char *fmt, ...)
+{
+	va_list va;
+
+	va_start(va, fmt);
+	vprintf(NULL, fmt, va);
+	va_end(va);
+}
+
+void printat(const  char *str, uint32_t row, uint32_t col)
+{
+	tty_putat(str, row, col);
 }
