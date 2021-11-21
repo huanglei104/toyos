@@ -143,7 +143,7 @@ global kernel_setup
 		push ebx
 		push ecx
 		push esi
-		mov ebx, [esp + 12]
+		mov ebx, [esp + 20]
 
 		mov al, 0xc
 		out 0x70, al
@@ -151,13 +151,14 @@ global kernel_setup
 
 		mov esi, cmos_offset
 		mov ecx, 6
+		xor eax, eax
 	.next:
 		mov al, [esi]
 		out 0x70, al
 		in al, 0x71
-		mov [ebx], al
+		mov [ebx], eax
 		inc esi
-		inc ebx
+		add ebx, 4
 		loop .next
 
 		mov al, 0x20

@@ -4,6 +4,8 @@
 
 #define TASK_MAX	20
 
+extern volatile int jiffies;
+
 int total = 0;
 int current = 0;
 
@@ -13,7 +15,7 @@ task_struct *task_list = (void*)TASK_BASE;
 selector gdt_add_entry(uint32_t base, uint32_t limit, uint16_t attr)
 {
 	descriptor *e;
-	selector sel = 0;
+	selector sel;
 	byte48_t desc_ptr = {0};
 
 	asm volatile("sgdt %0;":"=m"(desc_ptr));
@@ -83,10 +85,18 @@ void create_task(void (*run)())
 
 void schedule()
 {
-	if (total == 1) return;
+	if (total == 1 || (current == 1 && total == 2))
+		return;
 
 	if (++current == total)
 		current = 1;
 
 	do_switch(task_list[current].tss_sel);
+}
+
+void sleep(int s)
+{
+	int j1 = jiffies;
+
+	while ((jiffies - j1) * 10 < (s * 1000));
 }

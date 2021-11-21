@@ -9,6 +9,8 @@
 extern void schedule();
 extern void keyboard_process();
 
+volatile int jiffies;
+
 static __interrupt
 void interrupt_common_handler(irframe_t *irf)
 {
@@ -26,7 +28,7 @@ static __interrupt
 void interrupt_clock_handler(irframe_t *irf)
 {
 	char buf[32];
-	uint8_t time[6];
+	uint32_t time[6];
 
 	read_time(time);
 
@@ -40,6 +42,8 @@ void interrupt_clock_handler(irframe_t *irf)
 static __interrupt
 void interrupt_timer_handler(irframe_t *irf)
 {
+	jiffies++;
+
 	outbyte(0x20, 0x20);
 	schedule();
 }

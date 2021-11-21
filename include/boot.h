@@ -120,10 +120,11 @@ typedef struct {
 	tss_segment *tss;
 } __attribute__((packed)) task_struct;
 
+void sleep(int s);
 void interrupt_init();
 void multitask_init();
 void create_task(void (*run)());
 void inbyte(uint32_t port, uint8_t *value);
 void outbyte(uint32_t port, uint16_t value);
-void read_time(uint8_t time[6]);
+void read_time(uint32_t time[6]);
 void do_switch(selector sel);

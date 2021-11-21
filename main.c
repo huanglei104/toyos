@@ -10,28 +10,33 @@ __task void task2_run(irframe_t *irf)
 		sprintf(buf, "%d", i);
 		printat(buf, 0, 10);
 		i++;
+		sleep(1);
 	}
 }
 
 __task void task3_run(irframe_t *irf)
 {
-	int i = 'A';
+	int i = 0;
+	char buf[16];
 
 	while (1) {
-		if (i > 'Z') i = 'A';
-		printat((char*)&i, 1, 10);
+		sprintf(buf, "%d", i);
+		printat(buf, 1, 10);
 		i++;
+		sleep(2);
 	}
 }
 
 __task void task4_run(irframe_t *irf)
 {
-	int i = '0';
+	int i = 0;
+	char buf[16];
 
 	while (1) {
-		if (i > '9') i = '0';
-		printat((char*)&i, 2, 10);
+		sprintf(buf, "%d", i);
+		printat(buf, 2, 10);
 		i++;
+		sleep(3);
 	}
 }
 
