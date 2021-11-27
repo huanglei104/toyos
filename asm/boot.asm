@@ -2,7 +2,7 @@ extern main
 
 global inbyte
 global outbyte
-global read_time
+global systime
 global do_switch
 global kernel_setup
 
@@ -138,7 +138,7 @@ global kernel_setup
 		pop eax
 		ret
 
-	read_time:
+	systime:
 		push eax
 		push ebx
 		push ecx

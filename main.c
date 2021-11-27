@@ -1,15 +1,13 @@
 #include <boot.h>
+#include <tty.h>
 #include <string.h>
 
 __task void task2_run(irframe_t *irf)
 {
 	int i = 0;
-	char buf[16];
 
 	while (1) {
-		sprintf(buf, "%d", i);
-		printat(buf, 0, 10);
-		i++;
+		printf("%d\n", i++);
 		sleep(1);
 	}
 }
@@ -17,12 +15,9 @@ __task void task2_run(irframe_t *irf)
 __task void task3_run(irframe_t *irf)
 {
 	int i = 0;
-	char buf[16];
 
 	while (1) {
-		sprintf(buf, "%d", i);
-		printat(buf, 1, 10);
-		i++;
+		printf("%d\n", i++);
 		sleep(2);
 	}
 }
@@ -30,24 +25,22 @@ __task void task3_run(irframe_t *irf)
 __task void task4_run(irframe_t *irf)
 {
 	int i = 0;
-	char buf[16];
 
 	while (1) {
-		sprintf(buf, "%d", i);
-		printat(buf, 2, 10);
-		i++;
+		printf("%d\n", i++);
 		sleep(3);
 	}
 }
 
 int main()
 {
+	tty_init();
 	interrupt_init();
 	multitask_init();
 
-	create_task(task2_run);
-	create_task(task3_run);
-	create_task(task4_run);
+	create_task(0, task2_run);
+	create_task(1, task3_run);
+	create_task(2, task4_run);
 
 	sti();
 

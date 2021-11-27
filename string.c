@@ -1,8 +1,6 @@
 #include <stdtype.h>
 #include <tty.h>
-
-#define VSTART		0xb8000
-#define TEXTATTR	0xf
+#include <task.h>
 
 int strlen(const char *str)
 {
@@ -25,6 +23,12 @@ int isdigit(int c)
 	if (c >= '0' && c <= '9') return 1;
 
 	return 0;
+}
+
+void memcpy(char *dst, char *src, int len)
+{
+	for (int i = 0; i < len; i++)
+		dst[i] = src[i];
 }
 
 int atoi(char *str)
@@ -96,59 +100,44 @@ void memset(void *addr, int val, int len)
 	for (int i = 0; i < len; i++) p[i] = val;
 }
 
-void vprintf(char *dest, const char *fmt, va_list va)
+int vsprintf(char *restrict dst, const char *restrict fmt, va_list ap)
 {
-	char cval;
-	uint32_t uval;
 	char *strval, buf[16];
 	int radix, intval;
-	int offset = 0;
+	uint32_t uval;
 
-	for (int i = 0; fmt[i]; i++) {
+	for (int i = 0, offset = 0; fmt[i]; i++) {
 		if (fmt[i] == '%') {
 			memset(buf, 0, 16);
 			if (fmt[i + 1] == 'd' || fmt[i + 1] == 'x') {
-				intval = va_arg(va, int32_t);
+				intval = va_arg(ap, int32_t);
 				radix = fmt[i + 1] == 'd' ? 10 : 16;
 				itoa(intval, buf, radix);
-				if (dest == NULL)
-					tty_puts(buf);
-				else
-					offset += strcpy(dest + offset, buf);
+				offset += strcpy(dst+ offset, buf);
 
 			} else if (fmt[i + 1] == 'D' || fmt[i + 1] == 'X') {
-				uval = va_arg(va, uint32_t);
+				uval = va_arg(ap, uint32_t);
 				radix = fmt[i + 1] == 'D' ? 10 : 16;
 				utoa(uval, buf, radix);
-				if (dest == NULL)
-					tty_puts(buf);
-				else
-					offset += strcpy(dest + offset, buf);
+				offset += strcpy(dst + offset, buf);
 
 			} else if (fmt[i + 1] == 's') {
-				strval = va_arg(va, char*);
-				if (dest == NULL)
-					tty_puts(strval);
-				else
-					offset += strcpy(dest + offset, strval);
+				strval = va_arg(ap, char*);
+				offset += strcpy(dst + offset, strval);
 
 			} else if (fmt[i + 1] == 'c') {
-				cval = (char)va_arg(va, uint32_t);
-				if (dest == NULL)
-					tty_putc(cval);
-				else
-					dest[offset++] = cval;
+				intval = va_arg(ap, int32_t);
+				dst[offset++] = intval;
 			}
 
 			i++;
 
 		} else {
-			if (dest == NULL)
-				tty_putc(fmt[i]);
-			else
-				dest[offset++] = fmt[i];
+			dst[offset++] = fmt[i];
 		}
 	}
+
+	return 0;
 }
 
 void sprintf(char *buf, const char *fmt, ...)
@@ -156,7 +145,7 @@ void sprintf(char *buf, const char *fmt, ...)
 	va_list va;
 
 	va_start(va, fmt);
-	vprintf(buf, fmt, va);
+	vsprintf(buf, fmt, va);
 	buf[strlen(buf)] = '\0';
 	va_end(va);
 }
@@ -164,14 +153,17 @@ void sprintf(char *buf, const char *fmt, ...)
 
 void printf(const char *fmt, ...)
 {
-	va_list va;
+	va_list ap;
+	char buf[128] = {0};
 
-	va_start(va, fmt);
-	vprintf(NULL, fmt, va);
-	va_end(va);
+	va_start(ap, fmt);
+	vsprintf(buf, fmt, ap);
+	va_end(ap);
+
+	tty_put_at_terminal(get_tty(), buf);
 }
 
-void printat(const  char *str, uint32_t row, uint32_t col)
+void printat(const char *str, int row, int col)
 {
-	tty_putat(str, row, col);
+	tty_put_with_xy(get_tty(), str, row, col);
 }

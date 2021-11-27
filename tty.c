@@ -1,62 +1,145 @@
 #include <boot.h>
-#include <stdtype.h>
+#include <string.h>
+#include <task.h>
 
-#define	TTY_WIDTH		80
-#define TTY_HEIGHT		25
-#define TTY_MEM_START	(char*)0xb8000
-#define TTY_MEM_END		(char*)0xbffff
+#define NR_TTY	4
+#define TTY		tty[termno]
+#define SCREEN	tty[current]
 
-static char color = 0xf;
-static char *position = TTY_MEM_START;
+typedef struct {
+	uint32_t start;
+	uint32_t end;
+	uint32_t width;
+	uint32_t height;
+	uint32_t display_y;
+	uint32_t x;
+	uint32_t y;
+	uint8_t color;
+} struct_tty;
 
-static void tty_newline()
+static int current;
+static struct_tty tty[NR_TTY];
+
+void tty_update_cursor()
 {
-	position = position + 160 - (position - TTY_MEM_START) % 160;
+	int pos;
+
+	pos = (SCREEN.start - 0xb8000) / 2 +  SCREEN.y * 80 + SCREEN.x;
+
+	outbyte(0x3d4, 0xe);
+	outbyte(0x3d5, pos >> 8);
+	outbyte(0x3d4, 0xf);
+	outbyte(0x3d5, pos);
+
+	((char*)(SCREEN.start + SCREEN.y * 160 + SCREEN.x * 2))[1] = 0x8c;
 }
 
-void tty_puts(const char *str)
+/*相对于0xb8000的字符的偏移*/
+void tty_set_screen(int offset)
 {
-	for (int i = 0; str[i]; i++) {
-		if (str[i] == '\n')
-			tty_newline();
+	outbyte(0x3d4, 0xc);
+	outbyte(0x3d5, offset >> 8);
+	outbyte(0x3d4, 0xd);
+	outbyte(0x3d5, offset);
+}
 
-		else {
-			position[0] = str[i];
-			position[1] = color;
-
-			position += 2;
-			if (position > TTY_MEM_END) position = TTY_MEM_START;
-		}
+void tty_init()
+{
+	for (int i = 0; i < NR_TTY; i++) {
+		tty[i].width = 80;
+		tty[i].height = 50;
+		tty[i].color = 0xf;
+		tty[i].display_y = 0;
+		tty[i].x = 0;
+		tty[i].y = 0;
+		tty[i].start = 0xb8000 + i * 8000;
+		tty[i].end = tty[i].start + 7999;
 	}
+
+	memset((void*)0xb8000, 0, 0x8000);
+
+	current = 0;
+
+	tty_update_cursor();
 }
 
-void tty_putc(const char c)
+void tty_switch(int termno)
 {
-	char buf[2] = {c, 0};
+	int offset;
 
-	tty_puts(buf);
+	if (termno < 0 || termno > NR_TTY - 1 || termno == current)
+		return;
+
+	current = termno;
+	offset = (TTY.start - 0xb8000) / 2;
+
+	tty_set_screen(offset);
+
+	tty_update_cursor();
 }
 
-void tty_putat(const char *str, uint32_t row, uint32_t col)
+void tty_scroll(int termno, int dir)
 {
-	char *pos;
+	int offset =
+		(TTY.start - 0xb8000) / 2 + (TTY.display_y) * 80;
 
-	if (row > TTY_HEIGHT - 1) row = 0;
-	if (col > TTY_WIDTH - 1) col = 0;
+	tty_set_screen(offset);
+}
 
-	pos = (char*)(row * 160 + col * 2 + TTY_MEM_START);
+void tty_put_at_terminal(int termno, const char *str)
+{
+	char *addr;
 
 	for (int i = 0; str[i]; i++) {
 		if (str[i] == '\n') {
-			row++;
-			col = 0;
-			pos = (char*)(row * 160 + col * 2 + TTY_MEM_START);
-
-		} else {
-			pos[0] = str[i];
-			pos[1] = color;
+			TTY.x = 0;
+			TTY.y++;
+			continue;
 		}
 
-		pos += 2;
+		if (TTY.x >= TTY.width) {
+			TTY.x = 0;
+			TTY.y++;
+		}
+
+		if (TTY.y >= TTY.height)
+			SCREEN.y = 0;
+
+		addr = (void*)(TTY.start + TTY.y * 160 + TTY.x * 2);
+		addr[0] = str[i];
+		addr[1] = TTY.color;
+		TTY.x++;
 	}
+
+	if (TTY.y >= 25) {
+		TTY.display_y = TTY.y - 24;
+		tty_scroll(termno, 1);
+	}
+}
+
+void tty_put_with_xy(int termno, const char *str, int x, int y)
+{
+	int screen_x, screen_y;
+
+	if (x >= SCREEN.width)
+		x = SCREEN.width - 1;
+	if (y >= SCREEN.height)
+		y = SCREEN.height - 1;
+
+	screen_y = SCREEN.y;
+	screen_x = SCREEN.x;
+	SCREEN.y = y;
+	SCREEN.x = x;
+
+	tty_put_at_terminal(termno, str);
+
+	SCREEN.y = screen_y;
+	SCREEN.x = screen_x;
+}
+
+void tty_put_at_screen(char *str)
+{
+	tty_put_at_terminal(current, str);
+
+	tty_update_cursor();
 }

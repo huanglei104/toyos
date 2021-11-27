@@ -113,6 +113,8 @@ typedef struct {
 } __attribute__((packed)) tss_segment;
 
 typedef struct {
+	uint32_t pid;
+	uint32_t termno;
 	uint32_t esp;
 	uint32_t eip;
 	selector ss_sel;
@@ -123,8 +125,8 @@ typedef struct {
 void sleep(int s);
 void interrupt_init();
 void multitask_init();
-void create_task(void (*run)());
-void inbyte(uint32_t port, uint8_t *value);
-void outbyte(uint32_t port, uint16_t value);
-void read_time(uint32_t time[6]);
+void create_task(int termno, void (*run)());
+void inbyte(uint32_t port, int32_t *value);
+void outbyte(uint32_t port, int32_t value);
+void systime(uint32_t time[6]);
 void do_switch(selector sel);

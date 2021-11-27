@@ -1,14 +1,30 @@
 #include <string.h>
 #include <boot.h>
-
-#define KBV_CTRL		0x1d
-#define KBV_SHIFT		0x2a
-#define KBV_CAPSLOCK	0x3a
+#include <tty.h>
 
 typedef struct {
 	int val1;
 	int val2;
 } kbascii_t;
+
+typedef enum {
+	key_invalid0,	key_esc,	key_num1,	key_num2,	key_bum3,
+	key_num4,		key_num5,	key_num6,	key_num7,	key_num8,
+	key_num9,		key_num0,	key_hyphen, key_equal,	key_packspace,
+	key_tab,		key_q,		key_w,		key_e,		key_r,
+	key_t,			key_y,		key_u,		key_i,		key_o,
+	key_p,			key_brackets_left,		key_brackets_right,
+	key_enter,		key_ctrl,	key_a,		key_s,		key_d, key_f,
+	key_g,			key_h,		key_j,		key_k,		key_l,
+	key_semicolon,	key_quote,	key_backquote,			key_shift_left,
+	key_backslash,	key_z,		key_x, key_c,			key_v,
+	key_b,			key_n,		key_m,		key_comma,	key_dot,
+	key_slash,		key_shift_right,		key_invalid37,
+	key_alt,		key_space,	key_capslock,			key_f1,
+	key_f2,			key_f3,		key_f4,		key_f5,		key_f6,
+	key_f7,			key_f8,		key_f9,		key_f10,	key_f11 = 0x57,
+	key_f12 = 0x58,
+} scan_code;
 
 static kbascii_t keymap[] = {
 	{0x00, 0x00}, {0x1b, 0x1b}, {0x31, 0x21}, {0x32, 0x40}, {0x33, 0x23},
@@ -25,26 +41,56 @@ static kbascii_t keymap[] = {
 	{0x00, 0x00}, {0x00, 0x00}, {0x20, 0x20}, {0x00, 0x00}, {0x00, 0x00},
 };
 
+static int ctrl_status = 0;
+static int shift_status = 0;
+static int alt_status = 0;
+static int capslock_status = 0;
+
 void keyboard_process()
 {
-	uint8_t code;
-	uchar_t ascii = 0;
+	int32_t broken = 0, code = 0;
+	uint32_t ascii = 0;
 
 	inbyte(0x60, &code);
 
+	/*左右ctrl/alt做相同处理*/
+	if (code == 0xe0)
+		return;
+
+	broken = code & 0x7f;
+
 	if (code & 0x80) {
-		// breakcode
-		//
-	} else if (code == KBV_CAPSLOCK) {
-		keymap[KBV_CAPSLOCK].val1 = !keymap[KBV_CAPSLOCK].val1;
+		if (broken == key_ctrl)
+			ctrl_status = 0;
+		else if (broken == key_alt)
+			alt_status = 0;
+		else if (broken == key_shift_left || broken == key_shift_right)
+			shift_status = 0;
 
 	} else {
-		if (keymap[KBV_CAPSLOCK].val1)
-			ascii = keymap[code].val2;
-		else
-			ascii = keymap[code].val1;
+		if (code == key_capslock)
+			capslock_status = !capslock_status;
+		else if (code == key_ctrl)
+			ctrl_status = 1;
+		else if (code == key_alt)
+			alt_status = 1;
+		else if (code == key_shift_left || code == key_shift_right)
+			shift_status = 1;
 
-		printf("%c", ascii);
+		else {
+			if (code >= key_f1 && code <= key_f4 && alt_status) {
+				tty_switch(code - key_f1);
+				return;
+			}
+
+			if (shift_status || capslock_status)
+				ascii = keymap[code].val2;
+			else
+				ascii = keymap[code].val1;
+
+			char buf[4] = {0};
+			sprintf(buf, "%c", ascii);
+			tty_put_at_screen(buf);
+		}
 	}
-
 }

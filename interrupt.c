@@ -27,16 +27,9 @@ void interrupt_keyboard_handler(irframe_t *irf)
 static __interrupt
 void interrupt_clock_handler(irframe_t *irf)
 {
-	char buf[32];
-	uint32_t time[6];
+	static uint32_t time[6];
 
-	read_time(time);
-
-	sprintf(buf, "%d/%d/%d-%d:%d:%d",
-			time[0], time[1], time[2],
-			time[3], time[4], time[5]);
-
-	printat(buf, 10, 40);
+	systime(time);
 }
 
 static __interrupt

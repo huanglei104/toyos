@@ -6,8 +6,8 @@
 
 extern volatile int jiffies;
 
-int total = 0;
-int current = 0;
+static int total = 0;
+static int current = 0;
 
 tss_segment *tss = (void*)TSS_BASE;
 task_struct *task_list = (void*)TASK_BASE;
@@ -60,7 +60,7 @@ void multitask_init()
 	total++;
 }
 
-void create_task(void (*run)())
+void create_task(int termno, void (*run)())
 {
 	uint32_t addr = (uint32_t)kalloc(STACK_MAX);
 	uint32_t limit = ((addr - 0x1000) / 0x1000) & 0xfffff;
@@ -79,6 +79,8 @@ void create_task(void (*run)())
 	task_list[total].esp = tss[total].esp;
 	task_list[total].eip = tss[total].eip;
 	task_list[total].tss = &tss[total];
+	task_list[total].pid = total;
+	task_list[total].termno = termno;
 
 	total++;
 }
@@ -99,4 +101,14 @@ void sleep(int s)
 	int j1 = jiffies;
 
 	while ((jiffies - j1) * 10 < (s * 1000));
+}
+
+int getpid()
+{
+	return task_list[current].pid;
+}
+
+int get_tty()
+{
+	return task_list[current].termno;
 }
