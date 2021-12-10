@@ -27,7 +27,7 @@ void interrupt_keyboard_handler(irframe_t *irf)
 static __interrupt
 void interrupt_clock_handler(irframe_t *irf)
 {
-	static uint32_t time[6];
+	static u32 time[6];
 
 	systime(time);
 }
@@ -56,12 +56,12 @@ void interrupt_init()
 		table[i].idt.selector = 0x8;
 		table[i].idt.attr = 0x8e00;
 		if (handler_list[i]) {
-			table[i].idt.offset1 = (uint32_t)handler_list[i];
-			table[i].idt.offset2 = (uint32_t)handler_list[i] >> 16;
+			table[i].idt.offset1 = (u32)handler_list[i];
+			table[i].idt.offset2 = (u32)handler_list[i] >> 16;
 
 		} else {
-			table[i].idt.offset1 = (uint32_t)interrupt_common_handler;
-			table[i].idt.offset2 = (uint32_t)interrupt_common_handler >> 16;
+			table[i].idt.offset1 = (u32)interrupt_common_handler;
+			table[i].idt.offset2 = (u32)interrupt_common_handler >> 16;
 		}
 	}
 

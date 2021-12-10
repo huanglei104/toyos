@@ -53,7 +53,7 @@ int atoi(char *str)
 	return data * sign;
 }
 
-char* itoa(int32_t i, char *buf, int radix)
+char* itoa(int32 i, char *buf, int radix)
 {
 	int tidx = 0, bidx = 0;
     char tmp[16] = {0};
@@ -71,7 +71,7 @@ char* itoa(int32_t i, char *buf, int radix)
     return buf;
 }
 
-char* utoa(uint32_t num, char *buf, int radix)
+char* utoa(u32 num, char *buf, int radix)
 {
 	int tidx = 0, bidx = 0;
     char tmp[16] = {0};
@@ -104,19 +104,19 @@ int vsprintf(char *restrict dst, const char *restrict fmt, va_list ap)
 {
 	char *strval, buf[16];
 	int radix, intval;
-	uint32_t uval;
+	u32 uval;
 
 	for (int i = 0, offset = 0; fmt[i]; i++) {
 		if (fmt[i] == '%') {
 			memset(buf, 0, 16);
 			if (fmt[i + 1] == 'd' || fmt[i + 1] == 'x') {
-				intval = va_arg(ap, int32_t);
+				intval = va_arg(ap, int32);
 				radix = fmt[i + 1] == 'd' ? 10 : 16;
 				itoa(intval, buf, radix);
 				offset += strcpy(dst+ offset, buf);
 
 			} else if (fmt[i + 1] == 'D' || fmt[i + 1] == 'X') {
-				uval = va_arg(ap, uint32_t);
+				uval = va_arg(ap, u32);
 				radix = fmt[i + 1] == 'D' ? 10 : 16;
 				utoa(uval, buf, radix);
 				offset += strcpy(dst + offset, buf);
@@ -126,7 +126,7 @@ int vsprintf(char *restrict dst, const char *restrict fmt, va_list ap)
 				offset += strcpy(dst + offset, strval);
 
 			} else if (fmt[i + 1] == 'c') {
-				intval = va_arg(ap, int32_t);
+				intval = va_arg(ap, int32);
 				dst[offset++] = intval;
 			}
 

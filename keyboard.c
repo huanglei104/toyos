@@ -48,8 +48,8 @@ static int capslock_status = 0;
 
 void keyboard_process()
 {
-	int32_t broken = 0, code = 0;
-	uint32_t ascii = 0;
+	int32 broken = 0, code = 0;
+	u32 ascii = 0;
 
 	inbyte(0x60, &code);
 

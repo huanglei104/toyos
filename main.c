@@ -1,6 +1,7 @@
 #include <boot.h>
 #include <tty.h>
 #include <string.h>
+#include <mm.h>
 
 __task void task2_run(irframe_t *irf)
 {
@@ -35,6 +36,7 @@ __task void task4_run(irframe_t *irf)
 int main()
 {
 	tty_init();
+	memory_init();
 	interrupt_init();
 	multitask_init();
 

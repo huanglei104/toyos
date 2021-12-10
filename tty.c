@@ -7,14 +7,14 @@
 #define SCREEN	tty[current]
 
 typedef struct {
-	uint32_t start;
-	uint32_t end;
-	uint32_t width;
-	uint32_t height;
-	uint32_t display_y;
-	uint32_t x;
-	uint32_t y;
-	uint8_t color;
+	u32 start;
+	u32 end;
+	u32 width;
+	u32 height;
+	u32 display_y;
+	u32 x;
+	u32 y;
+	u8 color;
 } struct_tty;
 
 static int current;

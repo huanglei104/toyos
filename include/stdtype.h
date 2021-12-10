@@ -2,15 +2,14 @@
 #define STDTYPE_H
 
 typedef __builtin_va_list va_list;
-typedef char int8_t;
-typedef unsigned char uint8_t;
-typedef short int16_t;
-typedef unsigned short uint16_t;
-typedef int int32_t;
-typedef unsigned int uint32_t;
-typedef long long int64_t;
-typedef unsigned long long uint64_t;
-typedef unsigned char uchar_t;
+typedef char int8;
+typedef unsigned char u8;
+typedef short int16;
+typedef unsigned short u16;
+typedef int int32;
+typedef unsigned int u32;
+typedef long long int64;
+typedef unsigned long long u64;
 
 #define	NULL	(void*)0
 #define INT_MAX	__INT_MAX__

@@ -12,7 +12,7 @@ static int current = 0;
 tss_segment *tss = (void*)TSS_BASE;
 task_struct *task_list = (void*)TASK_BASE;
 
-selector gdt_add_entry(uint32_t base, uint32_t limit, uint16_t attr)
+selector gdt_add_entry(u32 base, u32 limit, u16 attr)
 {
 	descriptor *e;
 	selector sel;
@@ -62,17 +62,17 @@ void multitask_init()
 
 void create_task(int termno, void (*run)())
 {
-	uint32_t addr = (uint32_t)kalloc(STACK_MAX);
-	uint32_t limit = ((addr - 0x1000) / 0x1000) & 0xfffff;
+	u32 addr = (u32)memory_alloc(STACK_MAX);
+	u32 limit = ((addr - 0x1000) / 0x1000) & 0xfffff;
 
 	tss[total].ss = gdt_add_entry(0, limit, GDT_TYPE_STACK);
 	tss[total].esp = addr + STACK_MAX - 1;
-	tss[total].eip = (uint32_t)run;
+	tss[total].eip = (u32)run;
 	tss[total].eflags = 0x200;
 
 	task_list[total].ss_sel = tss[total].ss;
 	task_list[total].tss_sel = gdt_add_entry(
-			(uint32_t)&tss[total],
+			(u32)&tss[total],
 			sizeof(tss_segment),
 			GDT_TYPE_TSS);
 
